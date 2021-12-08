@@ -1,0 +1,245 @@
+---
+title: "Scale Development Predictive Validity"
+author: "Dylan Wiwad"
+date: '2018-05-08'
+output: pdf_document
+---
+
+# Setup
+
+Just getting packages and the data.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/dylanwiwad/Dropbox/Work/Dissertation/Scale IRT Pilot/Predictive Validity Summer 2018/")
+
+library(Hmisc)
+library(mctest)
+library(psych)
+
+data <- read.csv("Scale_Dev_Predictive_Validity_CLEAN.csv",header=TRUE)
+```
+
+
+# Cleaning 
+
+Just cleaning up the data, reverse coding what needs to be reverse coded and computing composites. The dataset at a glance actually looks really nice and clean. 651 participants, almost no missing data. Obviously not all variables are present in this code block, just the variables that need reverse coding and compositing.
+
+```{r cleaning, echo}
+# SEIS cols 12-16
+data$tol1 <- 8-data$tol1
+data$tol2 <- 8-data$tol2
+data$tol3 <- 8-data$tol3
+col.tol <- c(12,13,14,15,16)
+data$seis <- rowMeans(data[,col.tol], na.rm=TRUE)
+
+# amount cols 17-20
+data$amount1 <- 8-data$amount1
+data$amount2 <- 8-data$amount2
+data$amount3 <- 8-data$amount3
+col.amount <- c(17,18,19,20)
+data$amount <- rowMeans(data[,col.amount], na.rm=TRUE)
+
+# growth cols 21-24
+data$growth1 <- 8-data$growth1
+data$growth3 <- 8-data$growth3
+col.growth <- c(21,22,23,24)
+data$growth <- rowMeans(data[,col.growth], na.rm = TRUE)
+
+# fixable cols 25-31
+data$fixable1 <- 8-data$fixable1
+data$fixable2 <- 8-data$fixable2
+data$fixable3 <- 8-data$fixable3
+data$fixable4 <- 8-data$fixable4
+data$fixable6 <- 8-data$fixable6
+col.fixable <- c(25,26,27,28,29,30,31)
+data$fixable <- rowMeans(data[,col.fixable], na.rm=TRUE)
+
+# BJW cols 32-49
+col.bjw <- c(32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49)
+data$bjw <- rowMeans(data[,col.bjw], na.rm = TRUE)
+
+# SDO cols 50-64 
+data$sdo1 <- 8-data$sdo1
+data$sdo2 <- 8-data$sdo2
+data$sdo5 <- 8-data$sdo5
+data$sdo7 <- 8-data$sdo7
+data$sdo8 <- 8-data$sdo8
+data$sdo10 <- 8-data$sdo10
+data$sdo12 <- 8-data$sdo12
+data$sdo15 <- 8-data$sdo15
+col.sdo <- c(50,51,52,53,54,55,56,57,58,59,60,61,62,63,64)
+data$sdo <- rowMeans(data[,col.sdo], na.rm=TRUE)
+
+# Economic system justification cols 65-81
+data$esjt2 <- 10-data$esjt2
+data$esjt4 <- 10-data$esjt4
+data$esjt6 <- 10-data$esjt6
+data$esjt8 <- 10-data$esjt8
+data$esjt10 <- 10-data$esjt10
+data$esjt13 <- 10-data$esjt13
+data$esjt15 <- 10-data$esjt15
+data$esjt17 <- 10-data$esjt17
+col.esjt <- c(65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81)
+data$esjt <- rowMeans(data[,col.esjt], na.rm=TRUE)
+
+# PWE cols 82-100
+data$pwe9 <- 8-data$pwe9
+data$pwe15 <- 8-data$pwe15
+col.pwe <- c(82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100)
+data$pwe <- rowMeans(data[,col.pwe], na.rm=TRUE)
+
+# Inegalitarianism cols 103-110 NOTE: INEGAL8 IS THE ATTENTION CHECK
+col.inegal <- c(103,104,105,106,107,108,109)
+data$inegal <- rowMeans(data[,col.inegal], na.rm=TRUE)
+
+# Redistribution cols 111-114
+col.redist <- c(111,112,113,114)
+data$redist <- rowMeans(data[,col.redist], na.rm = TRUE)
+
+# Making the dictator game 0-10 instead of 1-11
+data$dict.give <- data$dict.give-1
+```
+
+Now, all the data should be cleaned and ready to go. One thing I'm going to note is that inegal8 is actually the attention check question, where two is the correct answer. Therefore, it wasn't included in the compositing of that scale.
+
+First things first, let's just get all our correlations. Does the SEIS correlate with everything?
+
+```{r correlations, echo}
+data$wvs <- as.numeric(data$wvs)
+cor.data <- data[,c(128:137,101:102)]
+cor(cor.data, method = "pearson", use='complete.obs')
+```
+
+We can see that the SEIS correlates with all of the measures, and actually quite highly with a couple of the measures. The two conceptual measures it correlates quite highly (over .70) with are social dominance orientation, economic system justification, as well as the World Values and International Social Survey questions. I think this is totally fine because they are conceptually distinct. While they measure similar things, we are separating the economic inequality out of these more conceptually dense scales for SDO and ESJT. I also don't see the high correlations with the wvs and issp measures as very problematic because they suffer the single-item issues.
+
+Let's go right to a big regression - let's throw everything in predicting our behaviour, the dictator game. First I just want to standardize everything. Get some z-scores so the regression is easier to interpret.
+
+```{r zscores, echo}
+data$z.seis <- scale(data$seis, center = TRUE, scale = TRUE)
+data$z.bjw <- scale(data$bjw, center = TRUE, scale = TRUE)
+data$z.sdo <- scale(data$sdo, center = TRUE, scale = TRUE)
+data$z.esjt <- scale(data$esjt, center = TRUE, scale = TRUE)
+data$z.pwe <- scale(data$pwe, center = TRUE, scale = TRUE)
+data$z.inegal <- scale(data$inegal, center = TRUE, scale = TRUE)
+data$z.redist <- scale(data$redist, center = TRUE, scale = TRUE)
+data$z.wvs <- scale(data$wvs, center = TRUE, scale = TRUE)
+data$z.issp <- scale(data$issp, center = TRUE, scale = TRUE)
+data$z.dict.give <- scale(data$dict.give, center= TRUE, scale = TRUE)
+data$age <- as.numeric(data$age)
+data$z.age <- scale(data$age, center= TRUE, scale = TRUE)
+data$z.inc <- scale(data$income, center= TRUE, scale = TRUE)
+data$z.gender <- scale(data$gender, center= TRUE, scale = TRUE)
+data$z.ideol <- scale(data$ideol, center= TRUE, scale = TRUE)
+
+```
+
+
+Run the regressions:
+
+```{r regress, echo}
+summary(lm(z.dict.give~z.seis, data=data))
+model <- lm(z.dict.give~z.seis+z.wvs+z.issp+z.bjw+z.sdo+z.esjt+z.pwe+z.redist+z.inegal, data=data)
+summary(model)
+```
+
+In the first regression all I entered was the seis predicting the dictator game, and we see increased support for economic inequality predicts giving less raffle tickets to the fight for $15 (b = -.48, p < .001).
+
+In the second regression, I included everything. I think the results still turn out quite favorably for the SEIS scale for a couple of reasons. First, of the three direct support for inequality items it is the strongest predictor. In fact, the ISSP measure drops to p = .26, and the WVS measure isn't quite as strong. I need to look into this but the WVS item seems to be backwards. Higher scores, which means stronger endorsement of the statement "We need larger income differences as incentives" appears to predict more giving in the dictator game. When I just run a correlation, the correlation is the direction it should be, but very weak and non-significant (r = -.07, p = .09). Importantly,  the SEIS has an almost identical beta to the WVS question. Just a bit less.
+
+The strongest predictor is support for redistribution, about twice as strong as the SEIS but that makes total sense because its a directly relevant belief about wealth redistribution, which is closer to giving that a more abstract belief about inequality.
+
+Let's take a quick look at multicollinearity in the model we defined above - I think we're getting screwy things because the wvs and issp measures are too highly correlated with the SEIS. We need to dig a bit into the VIF to see whats up.
+
+```{r vif, echo}
+dfnew1 <- data[,c(138:146)]
+omcdiag(dfnew1,data$dict.give)
+```
+
+So, what we see here are some astronomical Variance Inflation Factors. As a rule of thumb, anything under 4 is okay. The biggest offenders here are the SEIS and ESJT scale. Based on this, there seems to be a problem with multicollinearity. Digging a bit deeper:
+
+```{r mc digging more, echo}
+imcdiag(dfnew1, data$dict.give)
+```
+
+There we have it - Ones across the board. Multicollinearity is a major issue here in this model. Let's look at the partial correlations to see the biggest offenders.
+
+```{r partials, echo}
+partial.r(dfnew1, method='pearson')
+```
+
+I'm honestly not entirely sure what's causing the problem here. The highest correlations are between seis and sdo, redist, and the issp inequality measure. A couple other high correlations out there as well, like between pwe and bjw. I'm going to try a different tactic and build models similar to the models in Study 4, but swapping out the key predictors to look at change in R squared. I'll make models for SEIS, BJW, SDO, ESJT, PWE, wvs, and issp.
+
+```{r r squared, echo}
+summary(lm(z.dict.give~z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.seis+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.bjw+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.sdo+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.esjt+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.pwe+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.wvs+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.issp+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~z.redist+z.age+z.gender+z.inc+z.ideol, data=data))
+summary(lm(z.dict.give~inegal+z.age+z.gender+z.inc+z.ideol, data=data))
+```
+
+Okay, so here we have it. The SEIS offers the largest change in R squared off the base model of age, gender, income, and political ideology. SEIS offers an R squared change of 2% compared with .01%, .04%, 1.4%, .04%, -0.02%, and 1.7% for bjw, sdo, esjt, pwe, wvs, and issp respectively.
+
+Additionally, the SEIS appears to be among the best when looking at the beta weights. Firstly, both bjw and sdo are non-significant - they do not predict giving in the dictator game. Secondly, protestant work ethic is weak and predicts in a weird way - a stronger PWE predicts more giving p = .03. 
+
+ESJT is close to SEIS - the closest betas and the closes r squared change. I think this is fine because it's showing our scale is similar to ESJT but has a bit better predictive power and is more conceptually clean.
+
+Lastly, the wvs measure doesn't really predict at all and actually has an ns beta. The ISSP measure ("Income differences in the United States are too large") is also very close to the SEIS in terms of the change in r squared and the beta. That being said, the issp is not *better* per se (r squared change and beta still slightly lower) - our scale still offers the distinct advantages of not being a single item measure.
+
+I think this is what we needed for this study. Ready to rewrite!
+
+## Separability of constructs analysis from westfall and Yarkoni
+
+```{r}
+lvs='
+  seis =~ tol1 + tol2 + tol3 + tol4 + tol5
+  bjw =~ bjw1+bjw2+bjw3+bjw4+bjw5+bjw6+bjw7+bjw8+bjw9+bjw10+bjw11+bjw12+bjw13+bjw14+bjw15+bjw16+bjw17+bjw18
+  sdo =~ sdo1+sdo2+sdo3+sdo4+sdo5+sdo6+sdo7+sdo8+sdo9+sdo10+sdo11+sdo12+sdo13+sdo14+sdo15
+  ejst =~ esjt1+esjt2+esjt3+esjt4+esjt5+esjt6+esjt7+esjt8+esjt9+esjt10+esjt11+esjt12+esjt13+esjt14+esjt15+esjt16+esjt17
+  pwe =~ pwe1+pwe2+pwe3+pwe4+pwe5+pwe6+pwe7+pwe8+pwe9+pwe10+pwe11+pwe12+pwe13+pwe14+pwe15+pwe16+pwe17+pwe18+pwe19
+  inegal =~ inegal1+inegal2+inegal3+inegal4+inegal5+inegal6+inegal7+inegal8
+  dict.give ~ seis + bjw + sdo + ejst + pwe + inegal
+'
+
+library(lavaan)
+
+fit.lvs=cfa(lvs, data=data, sample.nobs = nrow(data))
+
+# display summary output
+summary(fit.lvs, fit.measures=TRUE, standardized=TRUE)
+#get standardized variances
+standardizedSolution(fit.lvs)
+
+#get a visual of the path
+library(semPlot)
+semPaths(fit.lvs, what="est", layout="tree", title=TRUE, style="LISREL")
+```
+
+lvs='
+  seis =~ tol1 + tol2 + tol3 + tol4 + tol5
+  bjw =~ bjw1+bjw2+bjw3+bjw4+bjw5+bjw6+bjw7+bjw8+bjw9+bjw10+bjw11+bjw12+bjw13+bjw14+bjw15+bjw16+bjw17+bjw18
+  sdo =~ sdo1+sdo2+sdo3+sdo4+sdo5+sdo6+sdo7+sdo8+sdo9+sdo10+sdo11+sdo12+sdo13+sdo14+sdo15
+  ejst =~ esjt1+esjt2+esjt3+esjt4+esjt5+esjt6+esjt7+esjt8+esjt9+esjt10+esjt11+esjt12+esjt13+esjt14+esjt15+esjt16+esjt17
+  pwe =~ pwe1+pwe2+pwe3+pwe4+pwe5+pwe6+pwe7+pwe8+pwe9+pwe10+pwe11+pwe12+pwe13+pwe14+pwe15+pwe16+pwe17+pwe18+pwe19
+  inegal =~ inegal1+inegal2+inegal3+inegal4+inegal5+inegal6+inegal7+inegal8
+  redist =~ redist1+redist2+redist3+redist4
+  dict.give ~ seis + bjw + sdo + ejst + pwe + inegal + redist + wvs + issp
+'
+
+library(lavaan)
+
+fit.lvs=cfa(lvs, data=data, sample.nobs = nrow(data))
+
+# display summary output
+summary(fit.lvs, fit.measures=TRUE, standardized=TRUE)
+#get standardized variances
+standardizedSolution(fit.lvs)
+
+#get a visual of the path
+library(semPlot)
+semPaths(fit.lvs, what="est", layout="tree", title=TRUE, style="LISREL")
