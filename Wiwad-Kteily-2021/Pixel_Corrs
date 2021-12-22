@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 29 12:05:29 2020
+
+@author: dylanwiwad
+"""
+
+# ---------------------------------------------------------------------------
+#
+# Pixel Correlations between the Democrat and Republican heatmaps in 
+# Study 1
+#
+# ---------------------------------------------------------------------------
+
+# Bring in all the packages we need
+import numpy as np
+import cv2
+from skimage.measure import compare_ssim
+
+# Read each the Democrat and Republican heatmaps
+# I built and saved them in grayscale to make sure there was no conversion
+# funny business
+dem = cv2.imread("Dem_to_cor_inf.png")
+rep = cv2.imread("Rep_to_cor_inf.png")
+
+# Convert the images to grayscale
+demg = cv2.cvtColor(dem, cv2.COLOR_BGR2GRAY)
+repg = cv2.cvtColor(rep, cv2.COLOR_BGR2GRAY)
+
+# Crop them so we are working with ONLY the heatmap portion and nothing else
+# I used the below lines to show the dem image to find the pixel edges and
+# then applied them to both heatmaps
+# cv2.imshow('Dems',dem)
+# cv2.waitKey(0)
+
+# Define the x and y axis pixel edges
+x1 = 70
+x2 = 685
+y1 = 48
+y2 = 389
+
+# Crop the Democrat and Republican heatmaps
+cropdem = demg[y1:y2, x1:x2]
+croprep = repg[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .860
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score))
+
+# ---------------------------------------------------------------------------
+#
+# Logic check - the image built in grayscale
+#
+# ---------------------------------------------------------------------------
+
+dem = cv2.imread("dem_grayscale.png")
+rep = cv2.imread("rep_greyscale.png")
+
+
+# Crop them so we are working with ONLY the heatmap portion and nothing else
+# I used the below lines to show the dem image to find the pixel edges and
+# then applied them to both heatmaps
+# cv2.imshow('Dems',dem)
+# cv2.waitKey(0)
+
+# Define the x and y axis pixel edges
+x1 = 70
+x2 = 685
+y1 = 48
+y2 = 389
+
+# Crop the Democrat and Republican heatmaps
+cropdem = dem[y1:y2, x1:x2]
+croprep = rep[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .886
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True, multichannel=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score)) # .662
+
+# So the numbers change a little bit, but it's fine. They are nearly identical.
+
+
+
+
+
+
+# Couple other correlations, one side only and quadrants
+# Get the pixels again for cutting
+cv2.imshow('Dems',dem)
+cv2.waitKey(0)
+
+# Right hand side only
+# Define the x and y axis pixel edges
+x1 = 377
+x2 = 685
+y1 = 48
+y2 = 389
+
+# Crop the Democrat and Republican heatmaps
+cropdem = demg[y1:y2, x1:x2]
+croprep = repg[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .485
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True, multichannel=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score)) # .696
+
+# Q1
+# Define the x and y axis pixel edges
+x1 = 377
+x2 = 685
+y1 = 48
+y2 = 218
+
+# Crop the Democrat and Republican heatmaps
+cropdem = demg[y1:y2, x1:x2]
+croprep = repg[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .867
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True, multichannel=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score)) # .751
+
+# Q2
+
+# Define the x and y axis pixel edges
+x1 = 377
+x2 = 685
+y1 = 218
+y2 = 389
+
+# Crop the Democrat and Republican heatmaps
+cropdem = demg[y1:y2, x1:x2]
+croprep = repg[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .717
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True, multichannel=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score)) # .631
+
+
+# Left hand side
+# Define the x and y axis pixel edges
+x1 = 70
+x2 = 376
+y1 = 48
+y2 = 389
+
+# Crop the Democrat and Republican heatmaps
+cropdem = demg[y1:y2, x1:x2]
+croprep = repg[y1:y2, x1:x2]
+
+# Compute a simple ppmc correlation of the pixel intensity in each image
+np.corrcoef(cropdem.flat, croprep.flat) # .712
+
+# Compute the SSIM between the two images and print 
+(score, diff) = compare_ssim(cropdem, croprep, full=True, multichannel=True)
+diff = (diff * 255).astype("uint8")
+
+print("SSIM: {}".format(score)) # .757
+
+# All the numbers intuitively make sense except for this LHS. Whats going on?
+
